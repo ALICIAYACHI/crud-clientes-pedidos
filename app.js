@@ -2,8 +2,8 @@
 // app.js — Punto de entrada de la aplicación
 // =====================================================
 require('dotenv').config();
-const express      = require('express');
-const path         = require('path');
+const express        = require('express');
+const path           = require('path');
 const methodOverride = require('method-override');
 
 const clientesRouter = require('./src/routes/clientes');
@@ -19,7 +19,7 @@ app.set('views', path.join(__dirname, 'src', 'views'));
 // ── Middlewares globales ──────────────────────────────
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(methodOverride('_method'));          // soporte PUT/DELETE desde HTML
+app.use(methodOverride('_method'));
 
 // ── Archivos estáticos ────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,7 +30,7 @@ app.get('/', (req, res) => res.redirect('/clientes'));
 app.use('/clientes', clientesRouter);
 app.use('/pedidos',  pedidosRouter);
 
-// ── Manejo de errores 404 ────────────────────────────
+// ── 404 ───────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).render('404', { titulo: 'Página no encontrada' });
 });

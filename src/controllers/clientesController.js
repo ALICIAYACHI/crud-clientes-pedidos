@@ -1,12 +1,12 @@
 // =====================================================
-// src/controllers/clientesController.js
+// src/controllers/clientesController.js — PostgreSQL
 // =====================================================
 const pool = require('../config/db');
 
 /* ── LISTAR ─────────────────────────────────────────── */
 exports.listar = async (req, res) => {
   try {
-    const [clientes] = await pool.query(
+    const { rows: clientes } = await pool.query(
       'SELECT * FROM clientes ORDER BY id_cliente DESC'
     );
     res.render('clientes/index', { titulo: 'Clientes', clientes, error: null });
@@ -31,7 +31,6 @@ exports.formCrear = (req, res) => {
 exports.crear = async (req, res) => {
   const { nombre, telefono, email } = req.body;
 
-  // Validación básica
   if (!nombre || !telefono || !email) {
     return res.render('clientes/form', {
       titulo: 'Nuevo Cliente',
@@ -44,12 +43,12 @@ exports.crear = async (req, res) => {
 
   try {
     await pool.query(
-      'INSERT INTO clientes (nombre, telefono, email) VALUES (?, ?, ?)',
+      'INSERT INTO clientes (nombre, telefono, email) VALUES ($1, $2, $3)',
       [nombre.trim(), telefono.trim(), email.trim()]
     );
     res.redirect('/clientes');
   } catch (err) {
-    const msg = err.code === 'ER_DUP_ENTRY'
+    const msg = err.code === '23505'
       ? 'El correo ya está registrado.'
       : err.message;
     res.render('clientes/form', {
@@ -65,10 +64,11 @@ exports.crear = async (req, res) => {
 /* ── FORM EDITAR ────────────────────────────────────── */
 exports.formEditar = async (req, res) => {
   try {
-    const [[cliente]] = await pool.query(
-      'SELECT * FROM clientes WHERE id_cliente = ?',
+    const { rows } = await pool.query(
+      'SELECT * FROM clientes WHERE id_cliente = $1',
       [req.params.id]
     );
+    const cliente = rows[0];
     if (!cliente) return res.redirect('/clientes');
 
     res.render('clientes/form', {
@@ -101,12 +101,12 @@ exports.actualizar = async (req, res) => {
 
   try {
     await pool.query(
-      'UPDATE clientes SET nombre=?, telefono=?, email=? WHERE id_cliente=?',
+      'UPDATE clientes SET nombre=$1, telefono=$2, email=$3 WHERE id_cliente=$4',
       [nombre.trim(), telefono.trim(), email.trim(), id]
     );
     res.redirect('/clientes');
   } catch (err) {
-    const msg = err.code === 'ER_DUP_ENTRY'
+    const msg = err.code === '23505'
       ? 'El correo ya está en uso por otro cliente.'
       : err.message;
     res.render('clientes/form', {
@@ -122,7 +122,7 @@ exports.actualizar = async (req, res) => {
 /* ── ELIMINAR ───────────────────────────────────────── */
 exports.eliminar = async (req, res) => {
   try {
-    await pool.query('DELETE FROM clientes WHERE id_cliente = ?', [req.params.id]);
+    await pool.query('DELETE FROM clientes WHERE id_cliente = $1', [req.params.id]);
     res.redirect('/clientes');
   } catch (err) {
     console.error(err);
