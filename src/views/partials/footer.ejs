@@ -1,0 +1,49 @@
+</main>
+
+<footer>
+  <div class="container text-center">
+    GestorPedidos &copy; <%= new Date().getFullYear() %> — Express.js + MySQL
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Modal para ver imagen completa -->
+<div class="modal fade" id="imgModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-0">
+        <h5 class="modal-title text-white">Comprobante de Pago</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center p-2">
+        <img id="imgModalSrc" src="" alt="comprobante" class="img-fluid rounded" style="max-height:80vh"/>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Abrir modal con imagen al hacer clic en thumbnail
+  document.querySelectorAll('.thumb').forEach(img => {
+    img.addEventListener('click', () => {
+      document.getElementById('imgModalSrc').src = img.src;
+      new bootstrap.Modal(document.getElementById('imgModal')).show();
+    });
+  });
+
+  // Preview de imagen al seleccionar
+  const inputImg = document.getElementById('comprobante_img');
+  if (inputImg) {
+    inputImg.addEventListener('change', e => {
+      const preview = document.getElementById('imgPreview');
+      if (preview && e.target.files[0]) {
+        preview.src = URL.createObjectURL(e.target.files[0]);
+        preview.classList.remove('d-none');
+      }
+    });
+  }
+</script>
+</body>
+</html>

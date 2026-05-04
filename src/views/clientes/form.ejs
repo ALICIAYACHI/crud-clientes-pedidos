@@ -1,0 +1,52 @@
+<%- include('../partials/header') %>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-person-plus"></i> <%= titulo %>
+      </div>
+      <div class="card-body p-4">
+
+        <% if (error) { %>
+          <div class="alert alert-danger alert-dismissible fade show">
+            <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
+        <form action="<%= accion %>" method="POST" novalidate>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nombre completo <span class="text-danger">*</span></label>
+            <input type="text" name="nombre" class="form-control"
+              value="<%= cliente.nombre || '' %>" placeholder="Ej: Ana García" required/>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Teléfono <span class="text-danger">*</span></label>
+            <input type="text" name="telefono" class="form-control"
+              value="<%= cliente.telefono || '' %>" placeholder="Ej: 987654321" required/>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="form-control"
+              value="<%= cliente.email || '' %>" placeholder="correo@ejemplo.com" required/>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill">
+              <i class="bi bi-save me-1"></i>Guardar
+            </button>
+            <a href="/clientes" class="btn btn-outline-secondary flex-fill">
+              <i class="bi bi-x-lg me-1"></i>Cancelar
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

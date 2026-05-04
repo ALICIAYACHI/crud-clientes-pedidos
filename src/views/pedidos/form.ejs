@@ -1,0 +1,101 @@
+<%- include('../partials/header') %>
+
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-receipt"></i> <%= titulo %>
+      </div>
+      <div class="card-body p-4">
+
+        <% if (error) { %>
+          <div class="alert alert-danger alert-dismissible fade show">
+            <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% } %>
+
+        <form action="<%= accion %>" method="POST" enctype="multipart/form-data" novalidate>
+
+          <div class="row g-3">
+
+            <!-- Fecha -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
+              <input type="date" name="fecha" class="form-control"
+                value="<%= pedido.fecha ? new Date(pedido.fecha).toISOString().split('T')[0] : '' %>" required/>
+            </div>
+
+            <!-- Total -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Total (S/.) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">S/.</span>
+                <input type="number" name="total" class="form-control" step="0.01" min="0"
+                  value="<%= pedido.total || '' %>" placeholder="0.00" required/>
+              </div>
+            </div>
+
+            <!-- Cliente -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Cliente <span class="text-danger">*</span></label>
+              <select name="id_cliente" class="form-select" required>
+                <option value="">— Selecciona un cliente —</option>
+                <% clientes.forEach(c => { %>
+                  <option value="<%= c.id_cliente %>"
+                    <%= pedido.id_cliente == c.id_cliente ? 'selected' : '' %>>
+                    <%= c.nombre %>
+                  </option>
+                <% }) %>
+              </select>
+              <% if (clientes.length === 0) { %>
+                <div class="form-text text-danger">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  No hay clientes. <a href="/clientes/nuevo">Crea uno primero.</a>
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Comprobante -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Comprobante de Pago</label>
+
+              <% if (pedido.comprobante_img) { %>
+                <div class="mb-2">
+                  <% const ext = pedido.comprobante_img.split('.').pop().toLowerCase(); %>
+                  <% if (ext === 'pdf') { %>
+                    <a href="/uploads/<%= pedido.comprobante_img %>" target="_blank" class="btn btn-sm btn-outline-danger mb-2">
+                      <i class="bi bi-file-pdf"></i> Ver comprobante actual
+                    </a>
+                  <% } else { %>
+                    <img src="/uploads/<%= pedido.comprobante_img %>" class="thumb mb-2" style="width:80px;height:80px" alt="actual"/>
+                  <% } %>
+                  <div class="form-text">Sube una nueva imagen para reemplazar la actual.</div>
+                </div>
+              <% } %>
+
+              <input type="file" name="comprobante_img" id="comprobante_img"
+                class="form-control" accept="image/*,.pdf"/>
+              <div class="form-text">Formatos: JPG, PNG, GIF, WEBP, PDF. Máx. 5MB.</div>
+
+              <!-- Preview -->
+              <img id="imgPreview" src="" alt="preview" class="thumb d-none mt-2" style="width:80px;height:80px"/>
+            </div>
+
+          </div><!-- /row -->
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary flex-fill">
+              <i class="bi bi-save me-1"></i>Guardar
+            </button>
+            <a href="/pedidos" class="btn btn-outline-secondary flex-fill">
+              <i class="bi bi-x-lg me-1"></i>Cancelar
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
