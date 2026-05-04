@@ -1,31 +1,22 @@
 // =====================================================
-// src/config/db.js — Conexión a PostgreSQL (Render)
+// src/config/db.js — Conexión a MongoDB con Mongoose
 // =====================================================
-const { Pool } = require('pg');
+const mongoose = require('mongoose');
 
-const pool = new Pool(
-  process.env.DATABASE_URL
-    ? {
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }, // obligatorio en Render
-      }
-    : {
-        host:     process.env.DB_HOST     || 'localhost',
-        port:     process.env.DB_PORT     || 5432,
-        user:     process.env.DB_USER     || 'postgres',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME     || 'crud_clientes',
-      }
-);
-
-(async () => {
+const connectDB = async () => {
   try {
-    const client = await pool.connect();
-    console.log('✅ Conectado a PostgreSQL correctamente');
-    client.release();
-  } catch (err) {
-    console.error('❌ Error al conectar a PostgreSQL:', err.message);
-  }
-})();
+    const mongoURI = process.env.MONGODB_URI;
+    if (!mongoURI) {
+      throw new Error('MONGODB_URI no está definida en el archivo .env');
+    }
 
-module.exports = pool;
+    await mongoose.connect(mongoURI);
+
+    console.log('✅ Conectado a MongoDB Atlas correctamente');
+  } catch (err) {
+    console.error('❌ Error al conectar a MongoDB:', err.message);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;

@@ -41,15 +41,15 @@
         <tbody>
           <% clientes.forEach(c => { %>
           <tr>
-            <td><span class="badge bg-secondary"><%= c.id_cliente %></span></td>
+            <td><span class="badge bg-secondary"><%= c._id %></span></td>
             <td class="fw-semibold"><%= c.nombre %></td>
             <td><i class="bi bi-telephone me-1 text-muted"></i><%= c.telefono %></td>
             <td><i class="bi bi-envelope me-1 text-muted"></i><%= c.email %></td>
             <td class="text-center">
-              <a href="/clientes/<%= c.id_cliente %>/editar" class="btn btn-sm btn-warning me-1">
+              <a href="/clientes/<%= c._id %>/editar" class="btn btn-sm btn-warning me-1">
                 <i class="bi bi-pencil"></i> Editar
               </a>
-              <form action="/clientes/<%= c.id_cliente %>?_method=DELETE" method="POST" class="d-inline"
+              <form action="/clientes/<%= c._id %>?_method=DELETE" method="POST" class="d-inline"
                 onsubmit="return confirm('¿Eliminar cliente <%= c.nombre %>? Se borrarán sus pedidos.')">
                 <button class="btn btn-sm btn-danger">
                   <i class="bi bi-trash"></i> Eliminar

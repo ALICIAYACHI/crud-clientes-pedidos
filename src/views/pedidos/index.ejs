@@ -42,11 +42,11 @@
         <tbody>
           <% pedidos.forEach(p => { %>
           <tr>
-            <td><span class="badge bg-secondary"><%= p.id_pedido %></span></td>
+            <td><span class="badge bg-secondary"><%= p._id %></span></td>
             <td><%= new Date(p.fecha).toLocaleDateString('es-PE') %></td>
             <td>
               <span class="badge-cliente">
-                <i class="bi bi-person me-1"></i><%= p.nombre_cliente %>
+                <i class="bi bi-person me-1"></i><%= p.id_cliente.nombre %>
               </span>
             </td>
             <td class="fw-bold text-success">S/. <%= parseFloat(p.total).toFixed(2) %></td>
@@ -65,11 +65,11 @@
               <% } %>
             </td>
             <td class="text-center">
-              <a href="/pedidos/<%= p.id_pedido %>/editar" class="btn btn-sm btn-warning me-1">
+              <a href="/pedidos/<%= p._id %>/editar" class="btn btn-sm btn-warning me-1">
                 <i class="bi bi-pencil"></i> Editar
               </a>
-              <form action="/pedidos/<%= p.id_pedido %>?_method=DELETE" method="POST" class="d-inline"
-                onsubmit="return confirm('¿Eliminar pedido #<%= p.id_pedido %>?')">
+              <form action="/pedidos/<%= p._id %>?_method=DELETE" method="POST" class="d-inline"
+                onsubmit="return confirm('¿Eliminar pedido #<%= p._id %>?')">
                 <button class="btn btn-sm btn-danger">
                   <i class="bi bi-trash"></i> Eliminar
                 </button>

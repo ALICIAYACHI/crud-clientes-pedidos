@@ -41,8 +41,8 @@
               <select name="id_cliente" class="form-select" required>
                 <option value="">— Selecciona un cliente —</option>
                 <% clientes.forEach(c => { %>
-                  <option value="<%= c.id_cliente %>"
-                    <%= pedido.id_cliente == c.id_cliente ? 'selected' : '' %>>
+                  <option value="<%= c._id %>"
+                    <%= pedido.id_cliente == c._id ? 'selected' : '' %>>
                     <%= c.nombre %>
                   </option>
                 <% }) %>

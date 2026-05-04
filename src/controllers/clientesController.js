@@ -1,14 +1,12 @@
 // =====================================================
-// src/controllers/clientesController.js — PostgreSQL
+// src/controllers/clientesController.js — Mongoose
 // =====================================================
-const pool = require('../config/db');
+const Cliente = require('../models/Cliente');
 
 /* ── LISTAR ─────────────────────────────────────────── */
 exports.listar = async (req, res) => {
   try {
-    const { rows: clientes } = await pool.query(
-      'SELECT * FROM clientes ORDER BY id_cliente DESC'
-    );
+    const clientes = await Cliente.find().sort({ createdAt: -1 });
     res.render('clientes/index', { titulo: 'Clientes', clientes, error: null });
   } catch (err) {
     console.error(err);
@@ -42,13 +40,15 @@ exports.crear = async (req, res) => {
   }
 
   try {
-    await pool.query(
-      'INSERT INTO clientes (nombre, telefono, email) VALUES ($1, $2, $3)',
-      [nombre.trim(), telefono.trim(), email.trim()]
-    );
+    const nuevoCliente = new Cliente({
+      nombre: nombre.trim(),
+      telefono: telefono.trim(),
+      email: email.trim(),
+    });
+    await nuevoCliente.save();
     res.redirect('/clientes');
   } catch (err) {
-    const msg = err.code === '23505'
+    const msg = err.code === 11000 || err.keyPattern?.email
       ? 'El correo ya está registrado.'
       : err.message;
     res.render('clientes/form', {
@@ -64,17 +64,13 @@ exports.crear = async (req, res) => {
 /* ── FORM EDITAR ────────────────────────────────────── */
 exports.formEditar = async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM clientes WHERE id_cliente = $1',
-      [req.params.id]
-    );
-    const cliente = rows[0];
+    const cliente = await Cliente.findById(req.params.id);
     if (!cliente) return res.redirect('/clientes');
 
     res.render('clientes/form', {
       titulo: 'Editar Cliente',
       cliente,
-      accion: `/clientes/${cliente.id_cliente}?_method=PUT`,
+      accion: `/clientes/${cliente._id}?_method=PUT`,
       metodo: 'POST',
       error: null,
     });
@@ -92,7 +88,7 @@ exports.actualizar = async (req, res) => {
   if (!nombre || !telefono || !email) {
     return res.render('clientes/form', {
       titulo: 'Editar Cliente',
-      cliente: { ...req.body, id_cliente: id },
+      cliente: { ...req.body, _id: id },
       accion: `/clientes/${id}?_method=PUT`,
       metodo: 'POST',
       error: 'Todos los campos son obligatorios.',
@@ -100,18 +96,23 @@ exports.actualizar = async (req, res) => {
   }
 
   try {
-    await pool.query(
-      'UPDATE clientes SET nombre=$1, telefono=$2, email=$3 WHERE id_cliente=$4',
-      [nombre.trim(), telefono.trim(), email.trim(), id]
+    await Cliente.findByIdAndUpdate(
+      id,
+      {
+        nombre: nombre.trim(),
+        telefono: telefono.trim(),
+        email: email.trim(),
+      },
+      { new: true, runValidators: true }
     );
     res.redirect('/clientes');
   } catch (err) {
-    const msg = err.code === '23505'
+    const msg = err.code === 11000 || err.keyPattern?.email
       ? 'El correo ya está en uso por otro cliente.'
       : err.message;
     res.render('clientes/form', {
       titulo: 'Editar Cliente',
-      cliente: { ...req.body, id_cliente: id },
+      cliente: { ...req.body, _id: id },
       accion: `/clientes/${id}?_method=PUT`,
       metodo: 'POST',
       error: msg,
@@ -122,7 +123,7 @@ exports.actualizar = async (req, res) => {
 /* ── ELIMINAR ───────────────────────────────────────── */
 exports.eliminar = async (req, res) => {
   try {
-    await pool.query('DELETE FROM clientes WHERE id_cliente = $1', [req.params.id]);
+    await Cliente.findByIdAndDelete(req.params.id);
     res.redirect('/clientes');
   } catch (err) {
     console.error(err);

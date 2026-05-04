@@ -1,10 +1,11 @@
 // =====================================================
-// src/controllers/pedidosController.js — PostgreSQL
+// src/controllers/pedidosController.js — Mongoose
 // =====================================================
-const path   = require('path');
-const fs     = require('fs');
-const pool   = require('../config/db');
-const multer = require('multer');
+const path        = require('path');
+const fs          = require('fs');
+const Pedido      = require('../models/Pedido');
+const Cliente     = require('../models/Cliente');
+const multer      = require('multer');
 
 /* ── Configuración de Multer ──────────────────────── */
 const storage = multer.diskStorage({
@@ -32,12 +33,10 @@ exports.upload = upload.single('comprobante_img');
 /* ── LISTAR ─────────────────────────────────────────── */
 exports.listar = async (req, res) => {
   try {
-    const { rows: pedidos } = await pool.query(`
-      SELECT p.*, c.nombre AS nombre_cliente
-      FROM pedidos p
-      INNER JOIN clientes c ON p.id_cliente = c.id_cliente
-      ORDER BY p.id_pedido DESC
-    `);
+    const pedidos = await Pedido.find()
+      .populate('id_cliente', 'nombre')
+      .sort({ createdAt: -1 });
+    
     res.render('pedidos/index', { titulo: 'Pedidos', pedidos, error: null });
   } catch (err) {
     res.render('pedidos/index', { titulo: 'Pedidos', pedidos: [], error: err.message });
@@ -46,9 +45,7 @@ exports.listar = async (req, res) => {
 
 /* ── FORM CREAR ─────────────────────────────────────── */
 exports.formCrear = async (req, res) => {
-  const { rows: clientes } = await pool.query(
-    'SELECT id_cliente, nombre FROM clientes ORDER BY nombre'
-  );
+  const clientes = await Cliente.find().sort({ nombre: 1 });
   res.render('pedidos/form', {
     titulo: 'Nuevo Pedido',
     pedido: {},
@@ -65,9 +62,7 @@ exports.crear = async (req, res) => {
   const comprobante_img = req.file ? req.file.filename : null;
 
   if (!fecha || !total || !id_cliente) {
-    const { rows: clientes } = await pool.query(
-      'SELECT id_cliente, nombre FROM clientes ORDER BY nombre'
-    );
+    const clientes = await Cliente.find().sort({ nombre: 1 });
     return res.render('pedidos/form', {
       titulo: 'Nuevo Pedido',
       pedido: req.body,
@@ -79,15 +74,16 @@ exports.crear = async (req, res) => {
   }
 
   try {
-    await pool.query(
-      'INSERT INTO pedidos (fecha, total, comprobante_img, id_cliente) VALUES ($1, $2, $3, $4)',
-      [fecha, parseFloat(total), comprobante_img, id_cliente]
-    );
+    const nuevoPedido = new Pedido({
+      fecha: new Date(fecha),
+      total: parseFloat(total),
+      comprobante_img,
+      id_cliente,
+    });
+    await nuevoPedido.save();
     res.redirect('/pedidos');
   } catch (err) {
-    const { rows: clientes } = await pool.query(
-      'SELECT id_cliente, nombre FROM clientes ORDER BY nombre'
-    );
+    const clientes = await Cliente.find().sort({ nombre: 1 });
     res.render('pedidos/form', {
       titulo: 'Nuevo Pedido',
       pedido: req.body,
@@ -102,20 +98,15 @@ exports.crear = async (req, res) => {
 /* ── FORM EDITAR ────────────────────────────────────── */
 exports.formEditar = async (req, res) => {
   try {
-    const { rows: pedidoRows } = await pool.query(
-      'SELECT * FROM pedidos WHERE id_pedido = $1', [req.params.id]
-    );
-    const pedido = pedidoRows[0];
+    const pedido = await Pedido.findById(req.params.id);
     if (!pedido) return res.redirect('/pedidos');
 
-    const { rows: clientes } = await pool.query(
-      'SELECT id_cliente, nombre FROM clientes ORDER BY nombre'
-    );
+    const clientes = await Cliente.find().sort({ nombre: 1 });
     res.render('pedidos/form', {
       titulo: 'Editar Pedido',
       pedido,
       clientes,
-      accion: `/pedidos/${pedido.id_pedido}?_method=PUT`,
+      accion: `/pedidos/${pedido._id}?_method=PUT`,
       metodo: 'POST',
       error: null,
     });
@@ -130,33 +121,32 @@ exports.actualizar = async (req, res) => {
   const { id } = req.params;
 
   try {
-    if (req.file) {
-      const { rows } = await pool.query(
-        'SELECT comprobante_img FROM pedidos WHERE id_pedido = $1', [id]
-      );
-      const anterior = rows[0]?.comprobante_img;
-      if (anterior) {
-        const ruta = path.join(__dirname, '..', 'uploads', anterior);
-        if (fs.existsSync(ruta)) fs.unlinkSync(ruta);
-      }
-      await pool.query(
-        'UPDATE pedidos SET fecha=$1, total=$2, comprobante_img=$3, id_cliente=$4 WHERE id_pedido=$5',
-        [fecha, parseFloat(total), req.file.filename, id_cliente, id]
-      );
-    } else {
-      await pool.query(
-        'UPDATE pedidos SET fecha=$1, total=$2, id_cliente=$3 WHERE id_pedido=$4',
-        [fecha, parseFloat(total), id_cliente, id]
-      );
+    const pedidoActual = await Pedido.findById(id);
+    if (!pedidoActual) return res.redirect('/pedidos');
+
+    // Si hay un nuevo archivo, eliminar el anterior
+    if (req.file && pedidoActual.comprobante_img) {
+      const ruta = path.join(__dirname, '..', 'uploads', pedidoActual.comprobante_img);
+      if (fs.existsSync(ruta)) fs.unlinkSync(ruta);
     }
+
+    const actualizacion = {
+      fecha: new Date(fecha),
+      total: parseFloat(total),
+      id_cliente,
+    };
+
+    if (req.file) {
+      actualizacion.comprobante_img = req.file.filename;
+    }
+
+    await Pedido.findByIdAndUpdate(id, actualizacion, { new: true, runValidators: true });
     res.redirect('/pedidos');
   } catch (err) {
-    const { rows: clientes } = await pool.query(
-      'SELECT id_cliente, nombre FROM clientes ORDER BY nombre'
-    );
+    const clientes = await Cliente.find().sort({ nombre: 1 });
     res.render('pedidos/form', {
       titulo: 'Editar Pedido',
-      pedido: { ...req.body, id_pedido: id },
+      pedido: { ...req.body, _id: id },
       clientes,
       accion: `/pedidos/${id}?_method=PUT`,
       metodo: 'POST',
@@ -168,15 +158,12 @@ exports.actualizar = async (req, res) => {
 /* ── ELIMINAR ───────────────────────────────────────── */
 exports.eliminar = async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      'SELECT comprobante_img FROM pedidos WHERE id_pedido = $1', [req.params.id]
-    );
-    const img = rows[0]?.comprobante_img;
-    if (img) {
-      const ruta = path.join(__dirname, '..', 'uploads', img);
+    const pedido = await Pedido.findById(req.params.id);
+    if (pedido && pedido.comprobante_img) {
+      const ruta = path.join(__dirname, '..', 'uploads', pedido.comprobante_img);
       if (fs.existsSync(ruta)) fs.unlinkSync(ruta);
     }
-    await pool.query('DELETE FROM pedidos WHERE id_pedido = $1', [req.params.id]);
+    await Pedido.findByIdAndDelete(req.params.id);
     res.redirect('/pedidos');
   } catch (err) {
     console.error(err);

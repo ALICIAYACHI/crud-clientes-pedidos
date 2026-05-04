@@ -5,12 +5,16 @@ require('dotenv').config();
 const express        = require('express');
 const path           = require('path');
 const methodOverride = require('method-override');
+const connectDB      = require('./src/config/db');
 
 const clientesRouter = require('./src/routes/clientes');
 const pedidosRouter  = require('./src/routes/pedidos');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+// ── Conectar a MongoDB ────────────────────────────────
+connectDB();
 
 // ── Motor de plantillas ───────────────────────────────
 app.set('view engine', 'ejs');
